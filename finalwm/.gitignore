@@ -1,0 +1,50 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.env
+.venv/
+env/
+venv/
+ENV/
+
+# Test and lint cache
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.cache/
+.mypy_cache/
+.ruff_cache/
+
+# Build/package output
+build/
+dist/
+*.egg-info/
+*.egg
+*.spec
+
+# Training output
+runs/
+artifacts/
+artifacts_smoke/
+*.pt
+*.pth
+*.onnx
+*.csv
+
+# Logs and local debug files
+*.log
+out.log
+test_results.txt
+test_debug.txt
+test_debug_utf8.txt
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.claude/
+.vscode/
+.idea/

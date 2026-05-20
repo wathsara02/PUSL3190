@@ -1,0 +1,69 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Lato:wght@300;400;700&family=Courier+Prime:wght@400;700&display=swap');
+
+@theme {
+    --font-sans: "Lato", sans-serif;
+    --font-display: "Playfair Display", serif;
+    --font-mono: "Courier Prime", monospace;
+}
+
+/* === FELT CARD TABLE PANEL === */
+@utility felt-panel {
+    background: rgba(15, 64, 30, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(212, 175, 55, 0.25);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(212,175,55,0.15);
+}
+
+@utility felt-panel-hover {
+    background: rgba(18, 78, 36, 0.9);
+    border: 1px solid rgba(212, 175, 55, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(212,175,55,0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@utility gold-text {
+    color: #D4AF37;
+    text-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+}
+
+@utility gold-border {
+    border: 1px solid rgba(212, 175, 55, 0.4);
+}
+
+@utility card-shine {
+    background: linear-gradient(135deg, #fff 0%, #f5f0e8 50%, #ede8df 100%);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3), 0 1px 0 rgba(255,255,255,0.8);
+}
+
+@keyframes sway {
+    0%, 100% { transform: rotate(-1deg); }
+    50% { transform: rotate(1deg); }
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+@utility gold-shimmer {
+    background: linear-gradient(90deg, #B8860B 0%, #D4AF37 30%, #FFD700 50%, #D4AF37 70%, #B8860B 100%);
+    background-size: 200% auto;
+    animation: shimmer 3s linear infinite;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+body {
+    background-color: #0a1f0d;
+    color: #f0e8d0;
+    font-family: "Lato", sans-serif;
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.3); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(212,175,55,0.5); }

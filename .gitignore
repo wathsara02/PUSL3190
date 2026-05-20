@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+.venv/
+venv/
+env/
+ENV/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Test cache
+.pytest_cache/
+.coverage
+.mypy_cache/
+.ruff_cache/
+
+# Training runs (large output folder)
+finalwm/runs/
+
+# Build output
+dist/
+dist-ssr/
+build/
+*.egg-info/
+
+# Model weights
+*.pt
+*.pth
+*.onnx
+
+# Databases
+*.db
+*.sqlite3
+
+# Logs
+*.log
+*.err.log
+*.out.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Claude internal
+.claude/
