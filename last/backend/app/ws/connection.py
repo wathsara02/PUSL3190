@@ -7,13 +7,13 @@ logger = logging.getLogger(__name__)
 
 class ConnectionManager:
     def __init__(self):
-        # room_id -> list of active connections
+        # room_id  list of active connections
         self.active_connections: Dict[str, List[WebSocket]] = {}
         # we can also store tokens per connection if needed
         self.connection_tokens: Dict[WebSocket, str] = {}
 
     def register(self, websocket: WebSocket, room_id: str, token: str):
-        """Register an already-accepted WebSocket. Call after the auth handshake."""
+        #register an already accepted WebSocket
         if room_id not in self.active_connections:
             self.active_connections[room_id] = []
         self.active_connections[room_id].append(websocket)
@@ -38,7 +38,7 @@ class ConnectionManager:
         await websocket.send_text(message)
 
     async def broadcast_state(self, room_id: str):
-        """Broadcasts the current RoomState to all connected clients in a room."""
+        #Broadcasts the current RoomState to all connected clients in a room.
         from app.game.room_manager import room_manager
         
         room = room_manager.get_room(room_id)

@@ -1,15 +1,6 @@
-"""
-PettingZoo AEC environment for the Omi trick-taking game.
-
-Key features:
-- Must-follow-suit enforcement with action masks.
-- Trump declaration phase (player 0 chooses a suit by default).
-- Observation includes private hand, public info, and history for recurrent agents.
-- CTDE-friendly info dict exposes winner and final score at terminal.
-"""
+#Pettingzoo AEC environment for Omi card game.
 
 from __future__ import annotations
-
 import random
 from typing import Dict, List, Optional, Sequence, Tuple
 
@@ -31,8 +22,6 @@ class OmiEnv(AECEnv):
         self.agents = [f"player_{i}" for i in range(4)]
         self.possible_agents = self.agents[:]
         # Trump declarer rotates each hand.
-        # Per your rule: the player to the right-hand side of the previous declarer
-        # declares trumps next hand (we interpret this as clockwise rotation: +1).
         self.start_player = 0
         self.reinit()
 
@@ -95,10 +84,10 @@ class OmiEnv(AECEnv):
         self.reinit()
         deck = rules.shuffle_deck(self.rng)
         self.hands, self._remaining_deck = rules.deal_first_four(deck)
-        # Trump declaration: only the current declarer takes an action
+        # Trump declaration only the current declarer takes an action
         self._init_selector(start=self.start_player, only_one=True)
         self.has_reset = True
-        # Rotate clockwise for the next hand (right-hand side of previous declarer)
+        # Rotate clockwise for the next hand
         self.start_player = (self.start_player + 1) % 4
         return self.observe(self.agent_selection)
 
@@ -220,7 +209,6 @@ class OmiEnv(AECEnv):
 
     def _was_dead_step(self, action):
         # Called by step() when the environment is already terminated.
-        # action is ignored — this is a no-op that advances the agent selector.
         agent = self.agent_selection
         self._cumulative_rewards[agent] = 0.0
         self.rewards[agent] = 0.0

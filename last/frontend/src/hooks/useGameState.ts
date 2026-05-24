@@ -23,7 +23,7 @@ export function useGameState(roomId: string, token: string | null): GameStateAct
         backendUrl.protocol = backendUrl.protocol === 'https:' ? 'wss:' : 'ws:';
         backendUrl.pathname = `/ws/${roomId}`;
         backendUrl.search = '';
-        // Token is NOT sent in the URL — it is sent as the first message after connect
+        //Token is NOT sent in the URL — it is sent as the first message after connect
 
         ws.current?.close(1000);
         ws.current = new WebSocket(backendUrl.toString());

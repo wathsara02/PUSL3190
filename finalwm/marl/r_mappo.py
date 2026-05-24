@@ -1,21 +1,17 @@
 from __future__ import annotations
-
 import copy
 import random as _random
 from typing import Dict, List, Optional, Tuple
-
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-
 from baselines.rule_based_agent import RuleBasedAgent
 from baselines.random_agent import RandomLegalAgent
 from buffer import AgentBuffer
 from models.critic import CentralCritic, encode_central_state
 from models.policy import PolicyNet
 from utils import masked_sample
-
 
 class MAPPOTrainer:
     def __init__(
@@ -26,7 +22,7 @@ class MAPPOTrainer:
         device: torch.device,
     ):
         self.policy = policy.to(device)
-        self.critic = critic.to(device)
+        self.critic = critic.to(device) #central critic
         self.device = device
         self.cfg = config
         self.optimizer_pi = optim.Adam(self.policy.parameters(), lr=config["lr"])
@@ -46,13 +42,13 @@ class MAPPOTrainer:
         self._use_amp = (device.type == "cuda")
         self.scaler_pi = torch.amp.GradScaler("cuda", enabled=self._use_amp)
         self.scaler_v = torch.amp.GradScaler("cuda", enabled=self._use_amp)
-        # Opponent mode: self_play, random, or frozen.
+        # Opponent mode- self play, random
         self.opponent_mode: str = "self_play"
         self.frozen_policy: Optional[PolicyNet] = None
         self._random_agent = RandomLegalAgent()
 
     def set_frozen_policy(self) -> None:
-        """Use the current policy as a fixed opponent."""
+        #freeze current policy
         self.frozen_policy = copy.deepcopy(self.policy).to(self.device)
         self.frozen_policy.eval()
         for p in self.frozen_policy.parameters():
@@ -60,7 +56,7 @@ class MAPPOTrainer:
         print("[CURRICULUM] Frozen policy updated from current policy weights.")
 
     def anneal_lr(self, fraction: float) -> None:
-        """Decay LR and entropy over training."""
+        #decay learning rate and entropy in training.
         if not self.lr_annealing:
             return
         new_lr = self.initial_lr + fraction * (self.lr_min - self.initial_lr)
@@ -78,7 +74,7 @@ class MAPPOTrainer:
         is_recurrent = self.policy.recurrent_type == "lstm"
         rule_agent = RuleBasedAgent()
 
-        # Pick controlled opponents for each env.
+        # Pick controlled opponents for each env
         env_opp_agents: List[set] = []
         if self.opponent_mode in ("random", "frozen"):
             env_opp_agents = [{1, 3} for _ in range(num_envs)]
@@ -98,7 +94,6 @@ class MAPPOTrainer:
 
         buffers = [AgentBuffer(self.gamma, self.gae_lambda, self.device) for _ in range(num_envs)]
 
-        # Hidden state is only used by LSTM policies.
         hidden_states = [
             {i: self.policy.init_hidden(1, self.device) for i in range(4)}
             for _ in range(num_envs)

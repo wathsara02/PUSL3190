@@ -1,20 +1,12 @@
 from __future__ import annotations
-
 from typing import Optional
-
 import torch
 import torch.nn as nn
-
 from omi_env import encoding, rules
 
-
 def encode_central_state(state: dict) -> torch.Tensor:
-    """
-    Encode centralized state for the critic.
+    #Encode centralized state for the critic.
 
-    Args:
-        state: dict from env.state()
-    """
     hands = state["hands"]
     trump = state.get("trump_suit")
     lead = state.get("lead_suit")

@@ -1,13 +1,3 @@
-"""
-OmiAgent: loads the trained PolicyNet for the Omi card game.
-
-Place the training checkpoint at:
-    backend/rl_model/weights.pt
-
-The checkpoint must be a dict with key 'policy_state_dict' (as produced by
-the finalwm training script), or a bare state_dict with the same keys.
-"""
-
 import os
 import random
 import logging
@@ -16,7 +6,6 @@ logger = logging.getLogger(__name__)
 
 WEIGHTS_PATH = os.path.join(os.path.dirname(__file__), "weights.pt")
 
-# Must match finalwm/models/policy.py exactly.
 _OBS_DIM      = 195
 _HISTORY_DIM  = 32 * 44   # HISTORY_LEN × HISTORY_FEAT_DIM
 _ACTION_DIM   = 36
@@ -24,7 +13,7 @@ _HIDDEN       = 128
 
 
 def _build_policy():
-    """Reconstruct the feed-forward PolicyNet architecture."""
+    #Reconstruct the feed-forward PolicyNet architecture.
     import torch.nn as nn
 
     class _PolicyNet(nn.Module):
@@ -60,7 +49,7 @@ def _build_policy():
 
 
 class OmiAgent:
-    """Wraps the trained PolicyNet with difficulty-aware epsilon-greedy selection."""
+#Load weights.pt
 
     def __init__(self, use_gpu: bool = False):
         self.model  = None
@@ -82,7 +71,6 @@ class OmiAgent:
             elif isinstance(ckpt, dict):
                 state_dict = ckpt
             else:
-                # Full serialised module (torch.save(model, ...))
                 self.model = ckpt
                 self.model.eval()
                 self.has_weights = True

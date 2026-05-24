@@ -493,10 +493,16 @@ export default function Game() {
                 <audio
                     key={peerToken}
                     autoPlay
-                    muted={deafened}
                     ref={audio => {
-                        if (audio && audio.srcObject !== stream) {
+                        if (!audio) return;
+                        audio.muted = deafened;
+                        if (audio.srcObject !== stream) {
                             audio.srcObject = stream;
+                            void audio.play().catch(() => {
+                                // Autoplay blocked — retry on next user gesture
+                                const resume = () => void audio.play().catch(() => {});
+                                document.addEventListener('click', resume, { once: true });
+                            });
                         }
                     }}
                 />

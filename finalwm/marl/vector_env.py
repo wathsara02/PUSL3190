@@ -1,3 +1,4 @@
+#enable multiprocessing(parallel matches at once)
 import multiprocessing as mp
 import numpy as np
 
@@ -50,7 +51,7 @@ def worker(remote, parent_remote, env_fn_wrapper):
             break
 
 class CloudVectorEnv:
-    """Small subprocess vector env for OmiEnv."""
+    #Small subprocess vector env for OmiEnv.
     def __init__(self, env_fns):
         self.waiting = False
         self.closed = False

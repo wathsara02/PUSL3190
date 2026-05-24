@@ -5,7 +5,6 @@ import secrets
 from typing import Dict, Optional, Tuple
 from datetime import datetime, timedelta, timezone
 import json
-
 from app.models.schemas import HandResultModel, SeatModel, RoomStateSnapshot
 from app.game.omi_env.env import OmiEnv
 from app.game.omi_env import rules

@@ -61,7 +61,6 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str):
 
                 if msg.get("type") == "action":
                     action = msg.get("action")
-                    # Fix #5: action must be an integer
                     if not isinstance(action, int) or isinstance(action, bool):
                         await connection_manager.send_personal_message(
                             json.dumps({"type": "error", "message": "Invalid action"}),
@@ -85,7 +84,6 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str):
                 elif msg.get("type") == "audio_status" and token is not None:
                     raw_muted = msg.get("muted")
                     raw_deafened = msg.get("deafened")
-                    # Fix #6: muted/deafened must be booleans when provided
                     if (raw_muted is not None and not isinstance(raw_muted, bool)) or \
                        (raw_deafened is not None and not isinstance(raw_deafened, bool)):
                         await connection_manager.send_personal_message(

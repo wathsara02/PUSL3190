@@ -1,14 +1,10 @@
 import numpy as np
-
 from omi_env import rules
 
-
 class RuleBasedAgent:
-    """
-    Simple heuristic agent:
-    - During trump declaration: pick the suit with the most cards in hand.
-    - During play: follow suit with highest card when possible, otherwise play lowest card.
-    """
+    #simple rule-based agent:
+    #trump declaration - pick the suit with the most cards in hand.
+    #play - follow suit with highest card when possible, otherwise play lowest card.
 
     def act(self, observation: dict) -> int:
         mask = observation["action_mask"]
@@ -19,7 +15,7 @@ class RuleBasedAgent:
         lead_onehot = obs_vec[n + 4 : n + 8]
         legal = np.nonzero(mask)[0]
 
-        # Trump declaration stage
+        # Trump declaration
         if np.any(mask[rules.ACTION_TRUMP_OFFSET : rules.ACTION_TRUMP_OFFSET + 4]):
             counts = []
             for i, suit in enumerate(rules.SUITS):
@@ -38,5 +34,5 @@ class RuleBasedAgent:
             lead_cards = [c for c in legal_cards if rules.index_to_card(c).suit == lead_suit]
             if lead_cards:
                 return max(lead_cards, key=lambda c: rules.index_to_card(c).value)
-        # Otherwise play lowest ranked legal card to save high cards
+        # Otherwise play lowest ranked card
         return min(legal_cards, key=lambda c: rules.index_to_card(c).value)

@@ -1,10 +1,4 @@
-"""
-Omi rules engine and helper utilities.
-
-Implements deck creation, shuffling, dealing, legal move masks (must follow
-suit), trick resolution, scoring, and terminal checks. The environment builds
-on these helpers to provide a PettingZoo-compatible API.
-"""
+#omi rules tika
 
 from __future__ import annotations
 
@@ -12,9 +6,8 @@ import random
 from dataclasses import dataclass
 from typing import List, Optional, Sequence, Tuple
 
-SUITS: Sequence[str] = ("C", "D", "H", "S")  # Clubs, Diamonds, Hearts, Spades
+SUITS: Sequence[str] = ("C", "D", "H", "S")
 
-# Omi (32-card) ranks: 7..A (8 ranks × 4 suits = 32 cards)
 RANKS: Sequence[str] = ("7", "8", "9", "10", "J", "Q", "K", "A")
 
 NUM_CARDS = 32
@@ -79,11 +72,8 @@ def deal_remaining_four(hands: List[List[int]], remaining_deck: Sequence[int]) -
 
 
 def legal_card_mask(hand: Sequence[int], lead_suit: Optional[str]) -> List[int]:
-    """
-    Compute a legal action mask for playing a card under must-follow-suit rules.
+    #Compute a legal action mask for playing a card under must-follow-suit rules.
 
-    Returns a length-NUM_CARDS list of 0/1 flags for each card index.
-    """
     mask = [0] * NUM_CARDS
     if not hand:
         return mask
@@ -99,7 +89,7 @@ def legal_card_mask(hand: Sequence[int], lead_suit: Optional[str]) -> List[int]:
 
 
 def legal_trump_mask() -> List[int]:
-    """Legal mask for trump declaration actions (only 4 suit choices)."""
+    #Legal mask for trump declaration actions
     mask = [0] * ACTION_DIM
     for i in range(4):
         mask[ACTION_TRUMP_OFFSET + i] = 1
@@ -113,18 +103,7 @@ def is_trump_action(action: int) -> bool:
 def resolve_trick(
     trick: Sequence[Tuple[int, int]], lead_suit: str, trump_suit: Optional[str]
 ) -> int:
-    """
-    Determine trick winner.
-
-    Args:
-        trick: sequence of (player_id, card_index) in play order.
-        lead_suit: suit that initiated the trick.
-        trump_suit: optional trump suit. If provided, highest trump wins; otherwise
-            highest card of the lead suit wins.
-
-    Returns:
-        winning player id.
-    """
+#determine trick winner
     if not trick:
         raise ValueError("Trick cannot be empty")
 
@@ -151,17 +130,17 @@ def resolve_trick(
 
 
 def team_for_player(player_id: int) -> int:
-    """Team assignment: players 0/2 vs 1/3."""
+    #Team assignment
     return 0 if player_id % 2 == 0 else 1
 
 
 def is_terminal(tricks_won: Tuple[int, int], cards_remaining: int) -> bool:
-    """Episode ends once a team has won the hand or all cards are played."""
+    #Episode ends once a team has won the hand or all cards are played.
     return max(tricks_won) >= 5 or cards_remaining == 0
 
 
 def compute_winner(tricks_won: Tuple[int, int]) -> int:
-    """Return 0 if team A wins, 1 if team B wins, -1 for tie."""
+    #Return 0 if team A wins, 1 if team B wins, -1 for tie.
     if tricks_won[0] > tricks_won[1]:
         return 0
     if tricks_won[1] > tricks_won[0]:

@@ -1,14 +1,3 @@
-"""
-Observation and action encoding utilities for the Omi environment.
-
-The observation structure mirrors PettingZoo's AEC/AIO pattern:
-{
-    "observation": np.ndarray,  # flat vector for policy input
-    "action_mask": np.ndarray,  # legal moves (includes trump declaration)
-    "history": np.ndarray       # sequence features for recurrent policies
-}
-"""
-
 from __future__ import annotations
 
 from typing import List, Optional, Sequence, Tuple
@@ -68,13 +57,12 @@ def encode_history(
 def compute_void_matrix(
     history: Sequence[Tuple[int, int, Optional[str], Optional[str]]]
 ) -> np.ndarray:
-    """
-    Compute a 4-player by 4-suit void matrix from play history.
-    """
+    #Compute a 4-player by 4-suit void matrix from play history.
+
     void_matrix = np.zeros((4, 4), dtype=np.float32)
     cards_per_suit = rules.NUM_CARDS // len(rules.SUITS)  # 8
 
-    # Track played suits per player.
+    # Track played suits per player
     suit_cards_played: List[set] = [set() for _ in range(len(rules.SUITS))]
     player_suit_played = [[False] * len(rules.SUITS) for _ in range(4)]
 
@@ -110,19 +98,6 @@ def encode_observation(
     action_mask: Sequence[int],
     history: Sequence[Tuple[int, int, Optional[str], Optional[str]]],
 ) -> dict:
-    """
-    Build the observation dictionary for the current agent.
-
-    Args:
-        agent_id: active agent id (0-3).
-        hand: list of card indices for the agent.
-        trump_suit: current trump suit or None if not declared yet.
-        lead_suit: suit of the current trick leader.
-        current_trick: list of (player_id, card_idx) tuples already played in this trick.
-        scores: tuple of team scores (team 0, team 1).
-        action_mask: legal action mask aligned with rules.ACTION_DIM.
-        history: past play tuples (player_id, card_idx, lead_suit, trump_suit).
-    """
     hand_vec = np.zeros(rules.NUM_CARDS, dtype=np.float32)
     for c in hand:
         hand_vec[c] = 1.0
@@ -186,13 +161,7 @@ def encode_observation(
 
 
 def decode_action(action: int) -> Tuple[bool, int]:
-    """
-    Decode an action index.
 
-    Returns:
-        (is_trump_action, payload) where payload is suit index (0-3) if trump,
-        otherwise card index (0-{rules.NUM_CARDS - 1}).
-    """
     if rules.is_trump_action(action):
         return True, action - rules.ACTION_TRUMP_OFFSET
     if action < 0 or action >= rules.NUM_CARDS:

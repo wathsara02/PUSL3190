@@ -1,14 +1,4 @@
-"""
-Observation and action encoding utilities for the Omi environment.
-
-The observation structure mirrors PettingZoo's AEC/AIO pattern:
-{
-    "observation": np.ndarray,  # flat vector for policy input
-    "action_mask": np.ndarray,  # legal moves (includes trump declaration)
-    "history": np.ndarray       # sequence features for recurrent policies
-}
-"""
-
+#Encoding actions same as in training encoding
 from __future__ import annotations
 
 from typing import List, Optional, Sequence, Tuple
@@ -17,8 +7,8 @@ import numpy as np
 
 from . import rules
 
-# History configuration: number of past plays to encode
-HISTORY_LEN = 32  # total plays in a 32-card hand (8 tricks × 4 plays)
+# History configuration number of past plays to encode
+HISTORY_LEN = 32  
 HISTORY_FEAT_DIM = rules.NUM_CARDS + 12  # card one-hot + 4 player + 4 lead + 4 trump
 
 
@@ -37,13 +27,7 @@ def one_hot(idx: int, size: int) -> np.ndarray:
 def encode_history(
     history: Sequence[Tuple[int, int, Optional[str], Optional[str]]]
 ) -> np.ndarray:
-    """
-    Encode a list of past plays into a fixed-length sequence.
-
-    Args:
-        history: iterable of tuples (player_id, card_idx, lead_suit, trump_suit)
-            ordered from oldest to newest.
-    """
+#Encode past plasy
     encoded = np.zeros((HISTORY_LEN, HISTORY_FEAT_DIM), dtype=np.float32)
     start = max(0, len(history) - HISTORY_LEN)
     slice_hist = history[start:]
@@ -68,7 +52,7 @@ def encode_history(
 def compute_void_matrix(
     history: Sequence[Tuple[int, int, Optional[str], Optional[str]]]
 ) -> np.ndarray:
-    """4×4 matrix: void_matrix[player][suit] = 1 if player is known void in suit."""
+    #Void matrix(keep count who doesnt have what)
     void_matrix = np.zeros((4, 4), dtype=np.float32)
     cards_per_suit = rules.NUM_CARDS // len(rules.SUITS)
     suit_cards_played: List[set] = [set() for _ in range(len(rules.SUITS))]
@@ -103,24 +87,12 @@ def encode_observation(
     action_mask: Sequence[int],
     history: Sequence[Tuple[int, int, Optional[str], Optional[str]]],
 ) -> dict:
-    """
-    Build the observation dictionary for the current agent.
-
-    Args:
-        agent_id: active agent id (0-3).
-        hand: list of card indices for the agent.
-        trump_suit: current trump suit or None if not declared yet.
-        lead_suit: suit of the current trick leader.
-        current_trick: list of (player_id, card_idx) tuples already played in this trick.
-        scores: tuple of team scores (team 0, team 1).
-        action_mask: legal action mask aligned with rules.ACTION_DIM.
-        history: past play tuples (player_id, card_idx, lead_suit, trump_suit).
-    """
+#Bui,d dictionary for agent (whole length)
     hand_vec = np.zeros(rules.NUM_CARDS, dtype=np.float32)
     for c in hand:
         hand_vec[c] = 1.0
 
-    # Suit distribution as fraction of hand — helps trump declaration.
+    # Suit distribution as fraction of hand helps trump declaration.
     suit_counts = np.zeros(4, dtype=np.float32)
     for c in hand:
         suit_counts[rules.SUITS.index(rules.index_to_card(c).suit)] += 1.0
@@ -176,13 +148,8 @@ def encode_observation(
 
 
 def decode_action(action: int) -> Tuple[bool, int]:
-    """
-    Decode an action index.
-
-    Returns:
-        (is_trump_action, payload) where payload is suit index (0-3) if trump,
-        otherwise card index (0-{rules.NUM_CARDS - 1}).
-    """
+    
+    #Decode an action index.
     if rules.is_trump_action(action):
         return True, action - rules.ACTION_TRUMP_OFFSET
     if action < 0 or action >= rules.NUM_CARDS:
@@ -191,6 +158,5 @@ def decode_action(action: int) -> Tuple[bool, int]:
 
 
 def observation_length() -> int:
-    """Length of the flat observation vector."""
     # hand(32) + trump(4) + lead(4) + trick(4×32) + scores(2) + player(4) + suit_counts(4) + void(16) + hand_strength(1)
     return rules.NUM_CARDS + 4 + 4 + (4 * rules.NUM_CARDS) + 2 + 4 + 4 + 16 + 1

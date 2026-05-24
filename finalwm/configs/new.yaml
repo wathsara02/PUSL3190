@@ -4,7 +4,7 @@ device: cpu
 
 model:
   recurrent_type: none
-  recurrent_hidden_size: 128
+  recurrent_hidden_size: 128 #size of models hidden state
   critic_hidden_size: 128
 
 algo:
@@ -32,12 +32,12 @@ training:
 reward_shaping:
   enabled: true
   illegal_action_penalty: -0.1
-  overplay_penalty: -0.10
-  trick_reward: 0.04
-  cap_bonus: 0.4
-  cap_penalty: -0.4
+  overplay_penalty: -0.10 #play card without having
+  trick_reward: 0.04 #reward for trick win
+  cap_bonus: 0.4 #bonus if 8/8 win
+  cap_penalty: -0.4 #reverse
   declarer_bonus: 0.05
-  trump_quality_bonus: 0.12
+  trump_quality_bonus: 0.12 
   declarer_team_win_bonus: 0.1
   declarer_team_loss_penalty: -0.1
   late_trick_reward: 0.03

@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useState, useRef } from 'react';
 
 // Basic mesh logic since we can have up to 4 players. We need one RTCPeerConnection *per* peer.
-// For simplicity in this demo game setup, we'll establish a fully connected mesh network.
-// A more robust scalable app would use an SFU (Selective Forwarding Unit) instead of mesh.
 
 interface Peers {
     [token: string]: RTCPeerConnection;
@@ -21,6 +19,7 @@ export function useVoiceChat(
     const localStreamPromiseRef = useRef<Promise<MediaStream | null> | null>(null);
     const peersRef = useRef<Peers>({});
     const negotiatingPeersRef = useRef<Set<string>>(new Set());
+    const pendingCandidatesRef = useRef<{ [peerId: string]: RTCIceCandidateInit[] }>({});
 
     const ensureLocalStream = useCallback(async () => {
         if (localStreamRef.current) return localStreamRef.current;
@@ -36,10 +35,11 @@ export function useVoiceChat(
                 })
                 .then(stream => {
                     localStreamRef.current = stream;
+                    console.log('[VoiceChat] Mic acquired, tracks:', stream.getTracks().length);
                     return stream;
                 })
                 .catch(err => {
-                    console.error("Mic access denied or unavailable", err);
+                    console.error('[VoiceChat] Mic access denied or unavailable:', err);
                     return null;
                 });
         }
@@ -89,6 +89,7 @@ export function useVoiceChat(
             if (!dead) return existing;
             existing.close();
             delete peersRef.current[peerId];
+            delete pendingCandidatesRef.current[peerId];
         }
 
         const rtcConfig = {
@@ -111,11 +112,21 @@ export function useVoiceChat(
         };
 
         peer.ontrack = (event) => {
-            const stream = event.streams[0];
-            setAudioStreams(prev => ({
-                ...prev,
-                [peerId]: stream
-            }));
+            const stream = event.streams[0] ?? new MediaStream([event.track]);
+            console.log('[VoiceChat] ontrack fired for peer', peerId, 'stream tracks:', stream.getTracks().length);
+            setAudioStreams(prev => ({ ...prev, [peerId]: stream }));
+        };
+
+        peer.onconnectionstatechange = () => {
+            console.log('[VoiceChat] connection state →', peer.connectionState, 'peer:', peerId);
+        };
+
+        peer.onicegatheringstatechange = () => {
+            console.log('[VoiceChat] ICE gathering →', peer.iceGatheringState, 'peer:', peerId);
+        };
+
+        peer.oniceconnectionstatechange = () => {
+            console.log('[VoiceChat] ICE connection →', peer.iceConnectionState, 'peer:', peerId);
         };
 
         if (localStreamRef.current) {
@@ -137,6 +148,7 @@ export function useVoiceChat(
         if (peer.signalingState !== 'stable') return;
 
         negotiatingPeersRef.current.add(peerId);
+        console.log('[VoiceChat] sending offer to', peerId);
 
         try {
         const offer = await peer.createOffer();
@@ -168,10 +180,19 @@ export function useVoiceChat(
 
                 if (msg.type === 'webrtc_offer') {
                     if (msg.target_peer_id !== myPeerId) return;
+                    console.log('[VoiceChat] received offer from', senderPeerId);
 
                     await ensureLocalStream();
                     const peer = getOrCreatePeer(senderPeerId);
                     await peer.setRemoteDescription(new RTCSessionDescription(msg.offer));
+
+                    // Flush any ICE candidates that arrived before the offer was processed
+                    const buffered = pendingCandidatesRef.current[senderPeerId] ?? [];
+                    delete pendingCandidatesRef.current[senderPeerId];
+                    for (const c of buffered) {
+                        await peer.addIceCandidate(new RTCIceCandidate(c));
+                    }
+
                     const answer = await peer.createAnswer();
                     await peer.setLocalDescription(answer);
 
@@ -184,20 +205,34 @@ export function useVoiceChat(
                     }
                 }
                 else if (msg.type === 'webrtc_answer') {
-                    // Only process answers meant for us
                     if (msg.target_peer_id !== myPeerId) return;
+                    console.log('[VoiceChat] received answer from', senderPeerId);
 
                     const peer = peersRef.current[senderPeerId];
                     if (peer) {
                         await peer.setRemoteDescription(new RTCSessionDescription(msg.answer));
+
+                        // Flush any ICE candidates that arrived before the answer was processed
+                        const buffered = pendingCandidatesRef.current[senderPeerId] ?? [];
+                        delete pendingCandidatesRef.current[senderPeerId];
+                        for (const c of buffered) {
+                            await peer.addIceCandidate(new RTCIceCandidate(c));
+                        }
                     }
                 }
                 else if (msg.type === 'webrtc_ice_candidate') {
                     if (msg.target_peer_id !== myPeerId) return;
 
                     const peer = peersRef.current[senderPeerId];
-                    if (peer && msg.candidate) {
+                    if (peer?.remoteDescription) {
+                        // Remote description already set — apply immediately
                         await peer.addIceCandidate(new RTCIceCandidate(msg.candidate));
+                    } else {
+                        // Buffer until setRemoteDescription is called
+                        if (!pendingCandidatesRef.current[senderPeerId]) {
+                            pendingCandidatesRef.current[senderPeerId] = [];
+                        }
+                        pendingCandidatesRef.current[senderPeerId].push(msg.candidate);
                     }
                 }
             } catch (err) {

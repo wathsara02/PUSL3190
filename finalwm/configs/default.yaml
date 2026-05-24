@@ -10,17 +10,17 @@ model:
 algo:
   lr: 0.0003
   lr_min: 0.00001
-  lr_annealing: true
+  lr_annealing: true #learning rate decay
   clip_range: 0.2
-  entropy_coef: 0.05
+  entropy_coef: 0.05 #encourage exploration
   entropy_coef_end: 0.01
-  value_coef: 0.5
+  value_coef: 0.5 #ciritic loss
   gae_lambda: 0.95
   gamma: 0.99
-  batch_size: 4096
-  ppo_epochs: 8
+  batch_size: 4096 #transisiton per ppo batch
+  ppo_epochs: 8 #reuse same batch
   max_grad_norm: 0.5
-  rule_mix_prob: 0.5
+  rule_mix_prob: 0.5 #chance of adding rule based agent
 
 training:
   episodes: 5000000

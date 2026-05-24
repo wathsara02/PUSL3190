@@ -1,17 +1,9 @@
-"""
-Inference helper for deploying the trained Intelligent Omi agent.
+#ask what to play from trined agent.
 
-Usage:
-    agent = load_agent("artifacts/policy_agent.pt", "artifacts/config.json")
-    action, hidden = agent.act(obs_vector, legal_mask, history_array, hidden_state=None, deterministic=True)
-"""
 from __future__ import annotations
-
 import json
 from typing import Optional, Tuple
-
 import torch
-
 from models.policy import PolicyNet
 from omi_env import encoding, rules
 from utils import clean_state_dict, get_device
@@ -24,20 +16,13 @@ class InferenceAgent:
 
     def act(
         self,
-        obs: torch.Tensor,
-        legal_mask: torch.Tensor,
-        history: torch.Tensor,
+        obs: torch.Tensor, #curren observation
+        legal_mask: torch.Tensor, #legal actions 0 or 1
+        history: torch.Tensor, 
         hidden_state: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
         deterministic: bool = False,
         temperature: float = 1.0,
     ):
-        """
-        Choose an action.
-
-        Lower temperature makes sampling less random.
-        Higher temperature makes sampling more random.
-        deterministic=True overrides temperature and always picks argmax.
-        """
         self.policy.eval()
         obs = obs.to(self.device).unsqueeze(0)
         legal_mask = legal_mask.to(self.device).unsqueeze(0)
@@ -45,7 +30,7 @@ class InferenceAgent:
         # Feed-forward policies do not use hidden state.
         if hidden_state is None and hasattr(self.policy, "init_hidden"):
             hidden_state = self.policy.init_hidden(1, self.device)
-        with torch.no_grad():
+        with torch.no_grad(): #run NN for each card
             logits, hidden_out = self.policy(obs, history, hidden_state, action_mask=legal_mask)
             if deterministic:
                 action = torch.argmax(logits, dim=-1)
@@ -53,7 +38,7 @@ class InferenceAgent:
                 scaled_logits = logits / max(temperature, 1e-6)
                 probs = torch.softmax(scaled_logits, dim=-1)
                 action = torch.distributions.Categorical(probs).sample()
-        return int(action.item()), hidden_out
+        return int(action.item()), hidden_out #update history after playing
 
 
 def load_agent(weights_path: str, config_path: str, device: Optional[torch.device] = None) -> InferenceAgent:

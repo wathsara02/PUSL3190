@@ -1,12 +1,4 @@
-"""
-PettingZoo AEC environment for the Omi trick-taking game.
-
-Key features:
-- Must-follow-suit enforcement with action masks.
-- Trump declaration phase (player 0 chooses a suit by default).
-- Observation includes private hand, public info, and history for recurrent agents.
-- CTDE-friendly info dict exposes winner and final score at terminal.
-"""
+#Game environment
 
 from __future__ import annotations
 
@@ -72,7 +64,7 @@ class OmiEnv(AECEnv):
         }
 
     def seed(self, seed: Optional[int] = None):
-        # Only reset RNG when a new seed is given.
+        # Only reset RNG when a new seed is given
         if seed is not None:
             self._seed = seed
             self.rng = random.Random(self._seed)
@@ -116,7 +108,7 @@ class OmiEnv(AECEnv):
         self.agent_selection = self.agent_selector.reset()
 
     def reset(self, seed: Optional[int] = None, options=None):
-        # Keep RNG moving unless a seed is provided.
+        # Keep RNG moving unless a seed is provided
         self.seed(seed)
         self.reinit()
         deck = rules.shuffle_deck(self.rng)
@@ -128,7 +120,7 @@ class OmiEnv(AECEnv):
         self.start_player = (self.start_player + 1) % 4
         return self.observe(self.agent_selection)
 
-    # PettingZoo API.
+    # PettingZoo API
     def observe(self, agent: str):
         agent_id = self.agents.index(agent)
         mask = self._action_mask(agent_id)
@@ -168,7 +160,7 @@ class OmiEnv(AECEnv):
             legal_indices = [i for i, v in enumerate(mask) if v == 1]
             action = legal_indices[0]
 
-        # Penalize taking over partner's winning trick when avoidable.
+        # Penalize taking over partner's winning trick when avoidable
         overplay_fired = False
         if self.reward_shaping and self.stage == "play" and len(self.current_trick) > 0:
             current_winner = rules.resolve_trick(self.current_trick, self.lead_suit, self.trump_suit)
@@ -196,7 +188,7 @@ class OmiEnv(AECEnv):
         advance_turn = True
 
         if self.stage == "trump":
-            # Only the current declarer acts in this stage.
+            # Only the current declarer acts in this stage
             if not rules.is_trump_action(action):
                 raise ValueError("During trump declaration only trump actions are legal")
             suit_idx = action - rules.ACTION_TRUMP_OFFSET
@@ -205,7 +197,7 @@ class OmiEnv(AECEnv):
             self.hands = rules.deal_remaining_four(self.hands, self._remaining_deck)
             self._remaining_deck = []
 
-            # Reward trump choice at episode end.
+            # Reward trump choice at episode end
             if self.reward_shaping:
                 full_hand = self.hands[agent_id]
                 trump_count = sum(
@@ -256,7 +248,7 @@ class OmiEnv(AECEnv):
                     self.rewards[agent] += self.rewards_cfg.get("wasted_trump_penalty", 0.0)
                     self._shaping_events["wasted_trump"] += 1
 
-            # Remove card from hand.
+            # Remove card from hand
             try:
                 self.hands[agent_id].remove(card_idx)
             except ValueError as exc:
@@ -279,7 +271,7 @@ class OmiEnv(AECEnv):
                 else:
                     self.tricks_won = (self.tricks_won[0], self.tricks_won[1] + 1)
 
-                # Reward the trick-winning team.
+                # Reward the trick-winning team
                 if self.reward_shaping:
                     team_winning = rules.team_for_player(winner)
                     for ag_id, ag_name in enumerate(self.agents):
@@ -381,7 +373,7 @@ class OmiEnv(AECEnv):
                 }
         
         self._accumulate_rewards()
-        return None  # AEC usually uses env.last() for observability
+        return None
 
     def _accumulate_rewards(self):
         """Adds .rewards to ._cumulative_rewards and resets .rewards."""
@@ -411,10 +403,7 @@ class OmiEnv(AECEnv):
         pass
 
     def state(self) -> Dict[str, object]:
-        """
-        Return a centralized state representation for training the critic.
-        Includes public info plus all hands (for CTDE).
-        """
+
         return {
             "hands": [list(h) for h in self.hands],
             "trump_suit": self.trump_suit,
