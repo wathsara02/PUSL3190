@@ -559,7 +559,7 @@ class RoomState:
 class RoomManager:
     def __init__(self):
         self.rooms: Dict[str, RoomState] = {}
-        self.room_ttl = timedelta(minutes=5)
+        self.room_ttl = timedelta(hours=2)
         
     def create_room(self, host_name: str, user_id: Optional[str] = None, avatar_id: Optional[str] = None) -> Tuple[RoomState, str]:
         self.cleanup_inactive_rooms()
