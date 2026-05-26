@@ -94,8 +94,12 @@ export function useVoiceChat(
 
         const rtcConfig = {
             iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-            ]
+                { urls: 'stun:stun.relay.metered.ca:80' },
+                { urls: 'turn:global.relay.metered.ca:80', username: '8eceed579ffb9363e7a6a8f3', credential: '+q5kXPGAh68Te0zz' },
+                { urls: 'turn:global.relay.metered.ca:80?transport=tcp', username: '8eceed579ffb9363e7a6a8f3', credential: '+q5kXPGAh68Te0zz' },
+                { urls: 'turn:global.relay.metered.ca:443', username: '8eceed579ffb9363e7a6a8f3', credential: '+q5kXPGAh68Te0zz' },
+                { urls: 'turns:global.relay.metered.ca:443?transport=tcp', username: '8eceed579ffb9363e7a6a8f3', credential: '+q5kXPGAh68Te0zz' },
+            ],
         };
 
         const peer = new RTCPeerConnection(rtcConfig);
