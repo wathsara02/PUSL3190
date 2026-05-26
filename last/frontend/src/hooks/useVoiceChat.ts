@@ -249,7 +249,7 @@ export function useVoiceChat(
         return () => {
             ws.removeEventListener('message', handleSignal);
         };
-    }, [ensureLocalStream, getOrCreatePeer, myPeerId, wsRef]);
+    }, [ensureLocalStream, getOrCreatePeer, myPeerId, wsRef, connected]);
 
     const hasPeerConnection = useCallback((peerId: string) => {
         const peer = peersRef.current[peerId];
