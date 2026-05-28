@@ -140,6 +140,7 @@ export default function Game() {
     const roundIntroTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [handResultIntro, setHandResultIntro] = useState<HandResult | null>(null);
     const [showDealIntro, setShowDealIntro] = useState(false);
+    const [handResultPending, setHandResultPending] = useState(false);
     const handResultKeyRef = useRef<string | null>(null);
     const handResultTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const handResultClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -209,6 +210,7 @@ export default function Game() {
 
         setHandResultIntro(null);
         setShowDealIntro(false);
+        setHandResultPending(true);
 
         handResultTimerRef.current = setTimeout(() => {
             setHandResultIntro(result);
@@ -217,6 +219,7 @@ export default function Game() {
                 setShowDealIntro(true);
                 dealIntroClearTimerRef.current = setTimeout(() => {
                     setShowDealIntro(false);
+                    setHandResultPending(false);
                     dealIntroClearTimerRef.current = null;
                 }, 1450);
             }, 1900);
@@ -901,7 +904,7 @@ export default function Game() {
                     {/* Hand */}
                     <div className="flex justify-center transition-all h-28 md:h-36 items-end pointer-events-auto" style={{ perspective: '1000px' }}>
                         <AnimatePresence>
-                            {sortedViewerHand && sortedViewerHand.map((cardIdx, i) => {
+                            {sortedViewerHand && !handResultPending && sortedViewerHand.map((cardIdx, i) => {
                                 const card = indexToCard(cardIdx);
                                 const isValid = action_mask && action_mask[cardIdx] === 1;
                                 const isTrumpPhase = phase === 'declare_trump';
