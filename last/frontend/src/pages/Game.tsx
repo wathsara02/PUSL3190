@@ -2,12 +2,11 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useGameState } from '../hooks/useGameState';
 import { useGameStore } from '../store/gameStore';
-import { useVoiceChat } from '../hooks/useVoiceChat';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playCardFlip, playWin, playLoss } from '../lib/sounds';
 import ModernBackground from '../components/ModernBackground';
 import PlayerAvatar from '../components/PlayerAvatar';
-import { ArrowLeft, Mic, MicOff, Crown, Flag, HelpCircle, Volume2, VolumeX } from 'lucide-react';
+import { ArrowLeft, Crown, Flag, HelpCircle } from 'lucide-react';
 import type { HandResult } from '../types/game';
 
 const SUITS = ['C', 'D', 'H', 'S'];
@@ -43,12 +42,8 @@ export default function Game() {
     const navigate = useNavigate();
     const token = localStorage.getItem(`token_${roomId}`);
 
-    const { sendAction, wsRef } = useGameState(roomId!, token);
-    const { state, error, connected, reconnecting } = useGameStore();
-    const myPeerId = state?.viewer_seat_id !== null && state?.viewer_seat_id !== undefined
-        ? state.seats[state.viewer_seat_id]?.peer_id
-        : null;
-    const { muted, setMuted, deafened, setDeafened, audioStreams, initiateCall, hasPeerConnection } = useVoiceChat(wsRef, myPeerId, connected);
+    const { sendAction } = useGameState(roomId!, token);
+    const { state, error, reconnecting } = useGameStore();
 
     useEffect(() => {
         if (roomId && token) {
@@ -101,33 +96,6 @@ export default function Game() {
         }, 3200);
     }, [state, roomId]);
 
-    useEffect(() => {
-        if (!state || !connected || !myPeerId) return;
-
-        const mySeat = state.viewer_seat_id !== null ? state.seats[state.viewer_seat_id] : null;
-        if (!mySeat) return;
-
-        const connectMissingPeers = () => {
-            state.seats.forEach(seat => {
-                if (
-                    seat.type === 'human'
-                    && seat.peer_id
-                    && seat.peer_id !== myPeerId
-                    && mySeat.seat_id < seat.seat_id
-                    && !hasPeerConnection(seat.peer_id)
-                ) {
-                    void initiateCall(seat.peer_id);
-                }
-            });
-        };
-
-        connectMissingPeers();
-        const retryTimer = window.setInterval(connectMissingPeers, 2000);
-
-        return () => {
-            window.clearInterval(retryTimer);
-        };
-    }, [state, connected, myPeerId, initiateCall, hasPeerConnection]);
 
     const soundPlayedRef = useRef(false);
     // Reset sound guard when a new match starts so sound plays again
@@ -464,49 +432,9 @@ export default function Game() {
                         </div>
                     )}
 
-                    <button
-                        onClick={() => setMuted(!muted)}
-                        className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all shadow-lg ${muted
-                            ? 'bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20'
-                            : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/20'
-                            }`}
-                        title={muted ? 'Unmute Microphone' : 'Mute Microphone'}
-                    >
-                        {muted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-                    </button>
-
-                    <button
-                        onClick={() => setDeafened(!deafened)}
-                        className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all shadow-lg ${deafened
-                            ? 'bg-amber-500/10 text-amber-300 border border-amber-400/30 hover:bg-amber-500/20'
-                            : 'bg-emerald-500/10 text-emerald-300 border border-emerald-400/30 hover:bg-emerald-500/20'
-                            }`}
-                        title={deafened ? 'Turn Speaker Back On' : 'Deafen Incoming Audio'}
-                    >
-                        {deafened ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-                    </button>
                 </div>
             </header>
 
-            {/* hidden audio elements for streams */}
-            {Object.entries(audioStreams).map(([peerToken, stream]) => (
-                <audio
-                    key={peerToken}
-                    autoPlay
-                    ref={audio => {
-                        if (!audio) return;
-                        audio.muted = deafened;
-                        if (audio.srcObject !== stream) {
-                            audio.srcObject = stream;
-                            void audio.play().catch(() => {
-                                // Autoplay blocked — retry on next user gesture
-                                const resume = () => void audio.play().catch(() => {});
-                                document.addEventListener('click', resume, { once: true });
-                            });
-                        }
-                    }}
-                />
-            ))}
 
             {error && (
                 <motion.div
@@ -588,7 +516,7 @@ export default function Game() {
                                 <>
                                     <Flag className="w-12 h-12 mx-auto mb-4" style={{ color: '#D4AF37' }} />
                                     <p className="text-[10px] uppercase tracking-[0.28em] font-black mb-2" style={{ color: 'rgba(212,175,55,0.72)' }}>Hand Complete</p>
-                                    <h2 className="text-3xl md:text-4xl font-black mb-5" style={{ color: '#f0e8d0', fontFamily: "'Playfair Display', serif" }}>No Hand Winner</h2>
+                                    <h2 className="text-3xl md:text-4xl font-black mb-5" style={{ color: '#f0e8d0', fontFamily: "'Playfair Display', serif" }}>Drawn</h2>
                                 </>
                             ) : (
                                 <>
@@ -928,34 +856,6 @@ export default function Game() {
                                         <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: '#f87171' }}>Disconnected</span>
                                     </div>
                                 )}
-                                {info.seat.type === 'human' && !info.seat.is_disconnected && (
-                                    <div className="flex items-center justify-center gap-1.5 mb-2">
-                                        <div
-                                            className="flex items-center gap-1 px-2 py-0.5 rounded-full"
-                                            style={info.seat.is_muted
-                                                ? { background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)' }
-                                                : { background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.22)' }}
-                                            title={info.seat.is_muted ? 'Mic muted' : 'Mic on'}
-                                        >
-                                            <div className="w-1.5 h-1.5 rounded-full" style={{ background: info.seat.is_muted ? '#f87171' : '#4ade80', boxShadow: info.seat.is_muted ? 'none' : '0 0 4px #4ade80' }} />
-                                            {info.seat.is_muted
-                                                ? <MicOff className="w-2.5 h-2.5" style={{ color: '#f87171' }} />
-                                                : <Mic className="w-2.5 h-2.5" style={{ color: '#4ade80' }} />}
-                                        </div>
-                                        <div
-                                            className="flex items-center gap-1 px-2 py-0.5 rounded-full"
-                                            style={info.seat.is_deafened
-                                                ? { background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)' }
-                                                : { background: 'rgba(34,211,238,0.08)', border: '1px solid rgba(34,211,238,0.2)' }}
-                                            title={info.seat.is_deafened ? 'Speaker off' : 'Speaker on'}
-                                        >
-                                            <div className="w-1.5 h-1.5 rounded-full" style={{ background: info.seat.is_deafened ? '#fbbf24' : '#67e8f9', boxShadow: info.seat.is_deafened ? 'none' : '0 0 4px #67e8f9' }} />
-                                            {info.seat.is_deafened
-                                                ? <VolumeX className="w-2.5 h-2.5" style={{ color: '#fbbf24' }} />
-                                                : <Volume2 className="w-2.5 h-2.5" style={{ color: '#67e8f9' }} />}
-                                        </div>
-                                    </div>
-                                )}
                                 {isTrickWinner && (
                                     <div className="absolute -bottom-3 text-[9px] text-emerald-100 font-bold bg-emerald-500 px-2 py-0.5 rounded-full whitespace-nowrap z-50 uppercase tracking-wider shadow-md">
                                         Trick Winner
@@ -978,18 +878,6 @@ export default function Game() {
                             <span className="flex items-center gap-2">
                                 <PlayerAvatar avatarId={viewerInfo.seat.avatar_id} isBot={false} size="sm" isActive={viewerInfo.isTurn} />
                                 <span>{viewerInfo.seat.display_name}</span>
-                                {viewerInfo.seat.is_muted && (
-                                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)' }} title="Mic muted">
-                                        <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#f87171' }} />
-                                        <MicOff className="w-3 h-3" style={{ color: '#f87171' }} />
-                                    </span>
-                                )}
-                                {viewerInfo.seat.is_deafened && (
-                                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full" style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)' }} title="Speaker off">
-                                        <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#fbbf24' }} />
-                                        <VolumeX className="w-3 h-3" style={{ color: '#fbbf24' }} />
-                                    </span>
-                                )}
                             </span>
                             <span
                                 className="font-bold text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full"
@@ -1026,32 +914,70 @@ export default function Game() {
                                 const yOffset = (isTrumpPhase && totalCards <= 4) ? Math.abs(distanceFromMid) * 1 : Math.abs(distanceFromMid) * 2;
                                 const overlapOffset = totalCards <= 4 && isTrumpPhase ? '-0.75rem' : '-2rem';
 
+                                const isTrump = trump_suit !== null && card.suit === trump_suit;
+                                const baseY = isValid && isMyTurn ? -20 : yOffset;
+
                                 return (
                                     <motion.div
                                         key={cardIdx}
                                         layout
-                                        initial={{ y: 100, opacity: 0 }}
+                                        initial={{ y: 130, opacity: 0, scale: 0.82 }}
                                         animate={{
-                                            y: isValid && isMyTurn ? -20 : yOffset,
+                                            y: baseY,
                                             rotate: rotation,
-                                            opacity: 1
+                                            opacity: 1,
+                                            scale: 1,
                                         }}
-                                        exit={{ y: 100, opacity: 0, scale: 0.8 }}
+                                        exit={{ y: 130, opacity: 0, scale: 0.75, transition: { duration: 0.22 } }}
+                                        transition={{
+                                            type: 'spring',
+                                            stiffness: 260,
+                                            damping: 22,
+                                            delay: i * 0.045,
+                                        }}
+                                        whileHover={
+                                            isValid && isMyTurn
+                                                ? { y: baseY - 22, scale: 1.07, transition: { type: 'spring', stiffness: 380, damping: 22 } }
+                                                : isMyTurn
+                                                    ? undefined
+                                                    : { y: baseY - 10, scale: 1.04, transition: { type: 'spring', stiffness: 340, damping: 20 } }
+                                        }
+                                        whileTap={
+                                            isValid && isMyTurn
+                                                ? { scale: 0.93, y: baseY - 8, transition: { type: 'spring', stiffness: 400, damping: 18 } }
+                                                : undefined
+                                        }
                                         onClick={() => handleCardClick(cardIdx)}
-                                        className="relative w-16 h-28 md:w-24 md:h-36 rounded-xl flex flex-col justify-between p-2 transition-all duration-200 cursor-pointer origin-bottom hover:-translate-y-6"
+                                        className="relative w-16 h-28 md:w-24 md:h-36 rounded-xl flex flex-col justify-between p-2 origin-bottom"
                                         style={{
                                             background: 'linear-gradient(135deg, #fffef8 0%, #f5f0e0 100%)',
-                                            border: isValid && isMyTurn ? '2px solid #D4AF37' : '1px solid #d4c8a8',
-                                            boxShadow: isValid && isMyTurn ? '0 -10px 30px rgba(212,175,55,0.5), 0 4px 16px rgba(0,0,0,0.3)' : '0 4px 12px rgba(0,0,0,0.3)',
-                                            opacity: !isValid && isMyTurn && !isTrumpPhase ? 0.45 : 1,
+                                            border: isValid && isMyTurn
+                                                ? '2px solid #D4AF37'
+                                                : isTrump
+                                                    ? '1.5px solid rgba(220,60,60,0.55)'
+                                                    : '1px solid #d4c8a8',
+                                            boxShadow: isValid && isMyTurn
+                                                ? '0 -10px 30px rgba(212,175,55,0.5), 0 4px 16px rgba(0,0,0,0.3)'
+                                                : isTrump
+                                                    ? '0 4px 14px rgba(0,0,0,0.3), 0 0 10px rgba(220,60,60,0.18)'
+                                                    : '0 4px 12px rgba(0,0,0,0.3)',
+                                            opacity: !isValid && isMyTurn && !isTrumpPhase ? 0.42 : 1,
                                             cursor: !isValid && isMyTurn && !isTrumpPhase ? 'not-allowed' : 'pointer',
                                             marginLeft: i === 0 ? 0 : overlapOffset,
-                                            zIndex: isValid && isMyTurn ? 50 + i : i
+                                            zIndex: isValid && isMyTurn ? 50 + i : i,
                                         }}
                                     >
                                         <div className={`text-sm md:text-lg font-bold leading-none ${getSuitColor(card.suit)}`}>
                                             {card.rank}<br />{getSuitSymbol(card.suit)}
                                         </div>
+                                        {isTrump && (
+                                            <motion.div
+                                                className="absolute inset-0 rounded-xl pointer-events-none"
+                                                animate={{ opacity: [0, 0.18, 0] }}
+                                                transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+                                                style={{ background: 'radial-gradient(circle at 50% 50%, rgba(220,60,60,0.45), transparent 70%)' }}
+                                            />
+                                        )}
                                         <div className={`text-sm md:text-lg font-bold leading-none rotate-180 self-end ${getSuitColor(card.suit)}`}>
                                             {card.rank}<br />{getSuitSymbol(card.suit)}
                                         </div>
