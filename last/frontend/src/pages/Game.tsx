@@ -581,9 +581,9 @@ export default function Game() {
                             const lane = Math.floor(i / 4);
                             const target =
                                 seat === 0 ? { x: (lane - 1.5) * 42, y: 285, rotate: (lane - 1.5) * 4 } :
-                                    seat === 1 ? { x: -360, y: (lane - 1.5) * 36, rotate: -18 } :
+                                    seat === 1 ? { x: 360, y: (lane - 1.5) * 36, rotate: 18 } :
                                         seat === 2 ? { x: (lane - 1.5) * 42, y: -245, rotate: (lane - 1.5) * -4 } :
-                                            { x: 360, y: (lane - 1.5) * 36, rotate: 18 };
+                                            { x: -360, y: (lane - 1.5) * 36, rotate: -18 };
 
                             return (
                                 <motion.div
@@ -638,9 +638,9 @@ export default function Game() {
                             const lane = Math.floor(i / 4);
                             const target =
                                 seat === 0 ? { x: (lane - 1.5) * 42, y: 285, rotate: (lane - 1.5) * 4 } :
-                                    seat === 1 ? { x: -360, y: (lane - 1.5) * 36, rotate: -18 } :
+                                    seat === 1 ? { x: 360, y: (lane - 1.5) * 36, rotate: 18 } :
                                         seat === 2 ? { x: (lane - 1.5) * 42, y: -245, rotate: (lane - 1.5) * -4 } :
-                                            { x: 360, y: (lane - 1.5) * 36, rotate: 18 };
+                                            { x: -360, y: (lane - 1.5) * 36, rotate: -18 };
 
                             return (
                                 <motion.div
@@ -763,16 +763,16 @@ export default function Game() {
 
                                 let translate = { x: 0, y: 0, rotate: 0 };
                                 if (relIdx === 0) translate = { y: 65, x: 0, rotate: 0 }; // bottom
-                                if (relIdx === 1) translate = { x: -65, y: 0, rotate: -15 }; // left
+                                if (relIdx === 1) translate = { x: 65, y: 0, rotate: 15 }; // right
                                 if (relIdx === 2) translate = { y: -65, x: 0, rotate: 0 }; // top
-                                if (relIdx === 3) translate = { x: 65, y: 0, rotate: 15 }; // right
+                                if (relIdx === 3) translate = { x: -65, y: 0, rotate: -15 }; // left
 
                                 const winnerRelIdx = frozenWinner !== null ? reorderedSeats.indexOf(frozenWinner) : -1;
                                 let collectTarget = translate;
                                 if (winnerRelIdx === 0) collectTarget = { x: 0, y: 155, rotate: 0 };
-                                if (winnerRelIdx === 1) collectTarget = { x: -175, y: 0, rotate: -18 };
+                                if (winnerRelIdx === 1) collectTarget = { x: 175, y: 0, rotate: 18 };
                                 if (winnerRelIdx === 2) collectTarget = { x: 0, y: -155, rotate: 0 };
-                                if (winnerRelIdx === 3) collectTarget = { x: 175, y: 0, rotate: 18 };
+                                if (winnerRelIdx === 3) collectTarget = { x: -175, y: 0, rotate: -18 };
                                 const collectToWinner = frozenTrick !== null && collectingTrick && frozenWinner !== null;
 
                                 return (
@@ -815,8 +815,8 @@ export default function Game() {
 
                     let positionClasses = '';
                     if (relIndex === 2) positionClasses = 'top-6 left-1/2 -translate-x-1/2 flex-col'; // Top
-                    if (relIndex === 1) positionClasses = 'left-6 top-1/2 -translate-y-1/2 flex-col'; // Left
-                    if (relIndex === 3) positionClasses = 'right-6 top-1/2 -translate-y-1/2 flex-col'; // Right
+                    if (relIndex === 1) positionClasses = 'right-6 top-1/2 -translate-y-1/2 flex-col'; // Right (next player, anti-clockwise)
+                    if (relIndex === 3) positionClasses = 'left-6 top-1/2 -translate-y-1/2 flex-col'; // Left
 
                     const isTrickWinner = state.trick_winner_display === info.absIndex;
                     const teamColors = getTeamColors(info.absIndex);
