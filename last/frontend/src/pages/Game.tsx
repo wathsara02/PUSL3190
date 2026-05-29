@@ -141,6 +141,9 @@ export default function Game() {
     const [handResultIntro, setHandResultIntro] = useState<HandResult | null>(null);
     const [showDealIntro, setShowDealIntro] = useState(false);
     const [handResultPending, setHandResultPending] = useState(false);
+    const TURN_TIME_LIMIT = 15;
+    const [turnTimeLeft, setTurnTimeLeft] = useState<number | null>(null);
+    const turnIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const handResultKeyRef = useRef<string | null>(null);
     const handResultTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const handResultClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -191,8 +194,35 @@ export default function Game() {
             if (handResultClearTimerRef.current) clearTimeout(handResultClearTimerRef.current);
             if (dealIntroClearTimerRef.current) clearTimeout(dealIntroClearTimerRef.current);
             if (connectionNoticeTimerRef.current) clearTimeout(connectionNoticeTimerRef.current);
+            if (turnIntervalRef.current) clearInterval(turnIntervalRef.current);
         };
     }, []);
+
+    // Auto-play timer: starts when it's the viewer's turn, auto-plays on expiry
+    const isMyTurnNow = !!(
+        state && state.room_id === roomId &&
+        state.viewer_seat_id !== null &&
+        state.viewer_seat_id === state.current_turn_player &&
+        state.action_mask !== null &&
+        state.phase === 'playing' &&
+        !handResultIntro && !showDealIntro && !roundIntroSuit
+    );
+
+    useEffect(() => {
+        if (turnIntervalRef.current) clearInterval(turnIntervalRef.current);
+        if (!isMyTurnNow) { setTurnTimeLeft(null); return; }
+        setTurnTimeLeft(TURN_TIME_LIMIT);
+        turnIntervalRef.current = setInterval(() => {
+            setTurnTimeLeft(prev => (prev !== null && prev > 0 ? prev - 1 : 0));
+        }, 1000);
+        return () => { if (turnIntervalRef.current) clearInterval(turnIntervalRef.current); };
+    }, [isMyTurnNow]);
+
+    useEffect(() => {
+        if (turnTimeLeft !== 0 || !state?.action_mask) return;
+        const legal = state.action_mask.map((v: number, i: number) => v === 1 ? i : -1).filter((i: number) => i !== -1);
+        if (legal.length > 0) sendAction(legal[Math.floor(Math.random() * legal.length)]);
+    }, [turnTimeLeft, state?.action_mask, sendAction]);
 
     useEffect(() => {
         if (!state?.last_hand_result || state.phase === 'finished') {
@@ -822,11 +852,11 @@ export default function Game() {
                     const teamColors = getTeamColors(info.absIndex);
 
                     return (
-                        <div key={relIndex} className={`absolute ${positionClasses} flex items-center gap-4 z-20`}>
+                        <div key={relIndex} className={`absolute ${positionClasses} flex items-center gap-4 z-20 scale-75 md:scale-90 lg:scale-100 origin-center`}>
                             <motion.div
                                 animate={info.isTurn ? { scale: 1.05 } : { scale: 1 }}
                                 style={{
-                                    padding: '12px 16px',
+                                    padding: '8px 12px',
                                     borderRadius: '16px',
                                     display: 'flex',
                                     flexDirection: 'column',
@@ -893,7 +923,14 @@ export default function Game() {
                                 {getTeamLabel(viewerInfo.absIndex)}
                             </span>
                             {viewerInfo.isTurn && phase === 'playing' && (
-                                <span className="font-bold text-xs uppercase tracking-wider px-2 py-0.5 rounded-md" style={{ color: '#D4AF37', background: 'rgba(212,175,55,0.12)' }}>Your Turn</span>
+                                <span className="font-bold text-xs uppercase tracking-wider px-2 py-0.5 rounded-md flex items-center gap-1.5" style={{ color: '#D4AF37', background: 'rgba(212,175,55,0.12)' }}>
+                                    Your Turn
+                                    {turnTimeLeft !== null && (
+                                        <span className="font-mono font-black text-sm tabular-nums" style={{ color: turnTimeLeft <= 5 ? '#f87171' : '#D4AF37' }}>
+                                            {turnTimeLeft}s
+                                        </span>
+                                    )}
+                                </span>
                             )}
                             {state.trick_winner_display === viewerInfo.absIndex && (
                                 <span className="font-bold text-xs uppercase tracking-wider px-2 py-0.5 rounded-md" style={{ color: '#90ee90', background: 'rgba(40,120,50,0.2)' }}>Won Trick</span>
