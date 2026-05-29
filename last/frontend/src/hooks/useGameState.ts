@@ -6,7 +6,7 @@ export interface GameStateActions {
     wsRef: React.MutableRefObject<WebSocket | null>;
 }
 
-const RECONNECT_DELAYS = [1000, 2000, 4000, 8000, 10000];
+const RECONNECT_DELAYS = [500, 1000, 2000, 4000, 8000];
 
 export function useGameState(roomId: string, token: string | null): GameStateActions {
     const { setState, setError, setConnected, setReconnecting, reset } = useGameStore.getState();
@@ -23,23 +23,24 @@ export function useGameState(roomId: string, token: string | null): GameStateAct
         backendUrl.protocol = backendUrl.protocol === 'https:' ? 'wss:' : 'ws:';
         backendUrl.pathname = `/ws/${roomId}`;
         backendUrl.search = '';
-        //Token is NOT sent in the URL — it is sent as the first message after connect
 
         ws.current?.close(1000);
         ws.current = new WebSocket(backendUrl.toString());
 
-        ws.current.onopen = () => {
-            if (unmounted.current) return;
-            // Send auth as first message so token never appears in the URL
-            ws.current?.send(JSON.stringify({ type: 'auth', token: token ?? null }));
+        // Capture instance so stale handlers from old connections don't interfere
+        const thisWs = ws.current;
+
+        thisWs.onopen = () => {
+            if (unmounted.current || thisWs !== ws.current) return;
+            thisWs.send(JSON.stringify({ type: 'auth', token: token ?? null }));
             setConnected(true);
             setReconnecting(false);
             setError(null);
             reconnectAttempts.current = 0;
         };
 
-        ws.current.addEventListener('message', (event: MessageEvent) => {
-            if (unmounted.current) return;
+        thisWs.addEventListener('message', (event: MessageEvent) => {
+            if (unmounted.current || thisWs !== ws.current) return;
             try {
                 const msg = JSON.parse(event.data);
                 if (msg.type === 'snapshot') setState(msg.payload);
@@ -49,10 +50,12 @@ export function useGameState(roomId: string, token: string | null): GameStateAct
             }
         });
 
-        ws.current.onclose = (event) => {
+        thisWs.onclose = (event) => {
             if (unmounted.current) return;
+            // Ignore close events from old connections (we already moved on)
+            if (thisWs !== ws.current) return;
+
             setConnected(false);
-            if (event.code === 1000) return;
 
             // Terminal errors — don't reconnect
             if (event.code === 4004) {
@@ -74,6 +77,7 @@ export function useGameState(roomId: string, token: string | null): GameStateAct
                 return;
             }
 
+            // All other close codes (including server-side 1000 from Railway proxy) — reconnect
             const attempt = reconnectAttempts.current;
             if (attempt >= RECONNECT_DELAYS.length) {
                 setError('Connection lost. Please refresh the page.');
@@ -86,8 +90,8 @@ export function useGameState(roomId: string, token: string | null): GameStateAct
             reconnectTimer.current = setTimeout(connect, RECONNECT_DELAYS[attempt]);
         };
 
-        ws.current.onerror = () => {
-            setError('WebSocket connection error');
+        thisWs.onerror = () => {
+            if (thisWs !== ws.current) return;
         };
     }, [roomId, token, setState, setError, setConnected, setReconnecting]);
 

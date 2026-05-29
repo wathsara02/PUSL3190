@@ -17,7 +17,7 @@ class RoomState:
     TRICK_ANIMATION_DELAY_SECONDS = 2.7
     ROUND_START_ANIMATION_DELAY_SECONDS = 2.2
     BOT_MOVE_DELAY_SECONDS = 0.85
-    DISCONNECT_BOT_TAKEOVER_SECONDS = 10
+    DISCONNECT_BOT_TAKEOVER_SECONDS = 30
 
     def __init__(self, room_id: str, host_token: str):
         self.room_id = room_id
