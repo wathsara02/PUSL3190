@@ -177,22 +177,7 @@ export default function Home() {
                             {user.user_metadata?.display_name || user.user_metadata?.full_name || user.email?.split('@')[0]}
                         </span>
                     </motion.button>
-                ) : (
-                    <div className="flex items-center gap-4">
-                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                            onClick={() => navigate('/login')}
-                            className="text-sm font-semibold uppercase tracking-wider px-3 py-2 rounded-xl transition-colors"
-                            style={{ color: 'rgba(212,175,55,0.7)', background: 'rgba(10,40,15,0.5)', border: '1px solid rgba(212,175,55,0.15)', backdropFilter: 'blur(8px)' }}>
-                            Log In
-                        </motion.button>
-                        <motion.button whileHover={{ scale: 1.05, boxShadow: '0 0 18px rgba(212,175,55,0.4)' }} whileTap={{ scale: 0.95 }}
-                            onClick={() => navigate('/signup')}
-                            className="text-sm font-bold uppercase tracking-wider px-4 py-2 rounded-xl"
-                            style={{ color: '#0a1f0d', background: 'linear-gradient(135deg, #B8860B, #D4AF37)' }}>
-                            Sign Up
-                        </motion.button>
-                    </div>
-                )}
+                ) : null}
             </div>
 
             {/* Glass hero panel */}
