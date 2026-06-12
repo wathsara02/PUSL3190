@@ -150,35 +150,6 @@ export default function Home() {
                 })}
             </div>
 
-            {/* Top-right profile button */}
-            <div className="absolute top-5 right-5 z-20">
-                {user ? (
-                    <motion.button
-                        onClick={() => navigate('/profile')}
-                        whileHover={{ scale: 1.04, boxShadow: `0 0 18px ${av.color}55` }}
-                        whileTap={{ scale: 0.96 }}
-                        className="flex items-center gap-2.5 px-3 py-2 rounded-2xl"
-                        style={{
-                            background: 'rgba(10,40,15,0.75)',
-                            border: `1px solid ${av.color}55`,
-                            backdropFilter: 'blur(10px)',
-                            transition: 'border-color 0.2s',
-                        }}
-                    >
-                        <motion.div
-                            whileHover={{ scale: 1.15, rotate: 8 }}
-                            transition={{ type: 'spring', stiffness: 300, damping: 15 }}
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-lg"
-                            style={{ background: `${av.color}33`, border: `2px solid ${av.color}88` }}
-                        >
-                            {av.emoji}
-                        </motion.div>
-                        <span className="text-xs font-semibold max-w-[80px] truncate" style={{ color: 'rgba(212,175,55,0.85)' }}>
-                            {user.user_metadata?.display_name || user.user_metadata?.full_name || user.email?.split('@')[0]}
-                        </span>
-                    </motion.button>
-                ) : null}
-            </div>
 
             {/* Glass hero panel */}
             <motion.div
